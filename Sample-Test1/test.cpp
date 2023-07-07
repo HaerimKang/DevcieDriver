@@ -1,58 +1,50 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "../DeviceDriver/DeviceDriver.cpp"
-#include "../DeviceDriver/FlashMemoryDevice.h"
-
+#include "../Project139/DeviceDriver.cpp";
 using namespace testing;
 
-class MockFlash : public FlashMemoryDevice
-{
+class FlashMock : public FlashMemoryDevice {
 public:
 	MOCK_METHOD(unsigned char, read, (long address), (override));
-	MOCK_METHOD(void, write, (long address, unsigned char data), (override));
+	MOCK_METHOD(void, write, (long address, unsigned char data));
 };
 
-TEST(TestCaseName, WriteSuccess) {
-	MockFlash mockFlash;
-	DeviceDriver driver(&mockFlash);
+TEST(ReadWithMock, ReadFive) {
+	FlashMock mockDevice;
+	EXPECT_CALL(mockDevice, read)
+		.Times(5);
 
-	EXPECT_CALL(mockFlash, read(100))
-		.WillOnce(Return(0xFF))
-		.WillRepeatedly(Return(100));
-
-	driver.write(100, 100);
-
-	EXPECT_THAT(driver.read(100), 100);
+	DeviceDriver dd(&mockDevice);
+	dd.read(0xA);
 }
 
-TEST(TestCaseName, WriteFail) {
-	MockFlash mockFlash;
-	DeviceDriver driver(&mockFlash);
+TEST(ReadWithMock, ReadException) {
+	FlashMock mockDevice;
+	EXPECT_CALL(mockDevice, read)
+		.WillOnce(Return((unsigned char)0xA))
+		.WillOnce(Return((unsigned char)0xA))
+		.WillOnce(Return((unsigned char)0xA))
+		.WillOnce(Return((unsigned char)0xB));
 
-	EXPECT_CALL(mockFlash, read(100))
-		.WillOnce(Return(100));
-
-	EXPECT_THROW(driver.write(100, 100), std::exception);
+	DeviceDriver dd(&mockDevice);
+	EXPECT_THROW(dd.read(11), std::exception);
 }
 
-TEST(TestCaseName, ReadSuccess) {
-	MockFlash mock_device;
-	DeviceDriver driver{ &mock_device };
+TEST(WriteWithMock, Write) {
+	FlashMock mockDevice;
+	EXPECT_CALL(mockDevice, read)
+		.Times(1)
+		.WillRepeatedly(Return(0xFF));
 
-	EXPECT_CALL(mock_device, read(100))
-		.Times(5)
-		.WillRepeatedly(Return(100));
-
-	EXPECT_THAT(driver.read(100), Eq(100));
+	DeviceDriver dd(&mockDevice);
+	dd.write(0xAL, 0xB);
 }
 
-TEST(TestCaseName, ReadFail) {
-	MockFlash mock_device;
-	DeviceDriver driver{ &mock_device };
+TEST(WriteWithMock, WriteException) {
+	FlashMock mockDevice;
+	EXPECT_CALL(mockDevice, read)
+		.WillRepeatedly(Return(0xA));
 
-	EXPECT_CALL(mock_device, read(100))
-		.WillOnce(Return(100))
-		.WillRepeatedly(Return(50));
-
-	EXPECT_THROW(driver.read(100), std::exception);
+	DeviceDriver dd(&mockDevice);
+	EXPECT_THROW(dd.write(0xA, 0xB), std::exception);
 }

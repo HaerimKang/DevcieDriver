@@ -1,35 +1,30 @@
-#include <windows.h>
-#include <exception>
 #include "DeviceDriver.h"
 
-#define TRY_CNT 5
-
-class ReadFailException : public std::exception
-{
-};
-
-class WriteFailException : public std::exception
-{
-};
+#include <exception>
 
 DeviceDriver::DeviceDriver(FlashMemoryDevice* hardware) : m_hardware(hardware)
 {}
 
+class ReadFailException : public std::exception {};
+class WriteFailException : public std::exception {};
+
 int DeviceDriver::read(long address)
 {
-    int value = (m_hardware->read(address));
-    for(int i=1; i< TRY_CNT; ++i)
-    {
-        Sleep(200);
-        if (value != (m_hardware->read(address))) throw ReadFailException();
-    }
+    int result = (int)(m_hardware->read(address));
 
-    return value;
+    const int RETRY_COUNT = 4;
+    for (int i = 0; i < RETRY_COUNT; i++) {
+        if (result == (int)m_hardware->read(address)) continue;
+        throw ReadFailException();
+    }
+    return result;
 }
 
 void DeviceDriver::write(long address, int data)
 {
-    if (m_hardware->read(address) != 0xFF) throw WriteFailException();
-
+    if ((int)m_hardware->read(address) != 0xFF) {
+        throw WriteFailException();
+    }
     m_hardware->write(address, (unsigned char)data);
+
 }
