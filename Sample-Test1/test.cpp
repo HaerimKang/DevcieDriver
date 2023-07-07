@@ -1,7 +1,36 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include "../DeviceDriver/DeviceDriver.cpp"
+#include "../DeviceDriver/FlashMemoryDevice.h"
 
-TEST(TestCaseName, TestName) {
-  EXPECT_THAT(1, 1);
-  EXPECT_TRUE(true);
+using namespace testing;
+
+class MockFlash : public FlashMemoryDevice
+{
+public:
+	MOCK_METHOD(unsigned char, read, (long address), (override));
+	MOCK_METHOD(void, write, (long address, unsigned char data), (override));
+};
+
+TEST(TestCaseName, WriteSuccess) {
+	MockFlash mockFlash;
+	DeviceDriver driver(&mockFlash);
+
+	EXPECT_CALL(mockFlash, read(100))
+		.WillOnce(Return(0xFF))
+		.WillRepeatedly(Return(100));
+
+	driver.write(100, 100);
+
+	EXPECT_THAT(driver.read(100), 100);
+}
+
+TEST(TestCaseName, WriteFail) {
+	MockFlash mockFlash;
+	DeviceDriver driver(&mockFlash);
+
+	EXPECT_CALL(mockFlash, read(100))
+		.WillOnce(Return(100));
+
+	EXPECT_THROW(driver.write(100, 100), std::exception);
 }
