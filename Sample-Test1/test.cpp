@@ -33,4 +33,25 @@ TEST(TestCaseName, WriteFail) {
 		.WillOnce(Return(100));
 
 	EXPECT_THROW(driver.write(100, 100), std::exception);
+
+TEST(TestCaseName, ReadSuccess) {
+	MockFlash mock_device;
+	DeviceDriver driver{ &mock_device };
+
+	EXPECT_CALL(mock_device, read(100))
+		.Times(5)
+		.WillRepeatedly(Return(100));
+
+	EXPECT_THAT(driver.read(100), Eq(100));
+}
+
+TEST(TestCaseName, ReadFail) {
+	MockFlash mock_device;
+	DeviceDriver driver{ &mock_device };
+
+	EXPECT_CALL(mock_device, read(100))
+		.WillOnce(Return(100))
+		.WillRepeatedly(Return(50));
+
+	EXPECT_THROW(driver.read(100), std::exception);
 }
