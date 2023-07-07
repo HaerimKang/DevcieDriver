@@ -33,6 +33,7 @@ TEST(TestCaseName, WriteFail) {
 		.WillOnce(Return(100));
 
 	EXPECT_THROW(driver.write(100, 100), std::exception);
+}
 
 TEST(TestCaseName, ReadSuccess) {
 	MockFlash mock_device;
